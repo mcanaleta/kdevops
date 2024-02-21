@@ -220,7 +220,8 @@ class GCBMicroservice:
                             _includeEquals=True,
                             cpu=self.cpu,
                             memory=self.memory,
-                        )
+                        ),
+                        cpu_idle=TFExpression("true"),
                     ),
                 ),
                 service_account=TFExpression(
