@@ -1,4 +1,4 @@
-from devops import GCBMicroservice
+from . import GCBMicroservice
 
 
 def cloudbuild_generate(service: GCBMicroservice):
