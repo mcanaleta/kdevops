@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from fileinput import filename
 from typing import Dict, List, Optional
 
-from ..cloudbuild import cloudbuild_generate
-from ..terraform import (
+from .cloudbuild import cloudbuild_generate
+from .terraform import (
     TerraformFile,
     TerraformProject,
     TFExpression,
@@ -15,7 +15,7 @@ from ..terraform import (
     TFSecretRole,
     dict_to_terraform,
 )
-from ..types import GCBSchedule, GCBWorkflow
+from .types import GCBSchedule, GCBWorkflow
 
 
 @dataclass
