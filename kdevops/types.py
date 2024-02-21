@@ -1,16 +1,14 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class GCBSchedule:
+class GCBSchedule(BaseModel):
     name: str
     path: str
     frequency: str
-    body: any
+    body: dict
 
 
-@dataclass
-class GCBWorkflow:
+class GCBWorkflow(BaseModel):
     name: str
     path: str
     body: str

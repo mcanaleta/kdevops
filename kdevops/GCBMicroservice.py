@@ -6,6 +6,9 @@ from dataclasses import dataclass, field
 from fileinput import filename
 from typing import Dict, List, Optional
 
+from dataclasses_jsonschema import JsonSchemaMixin
+from pydantic import BaseModel
+
 from .cloudbuild import cloudbuild_generate
 from .terraform import (
     TerraformFile,
@@ -18,20 +21,19 @@ from .terraform import (
 from .types import GCBSchedule, GCBWorkflow
 
 
-@dataclass
-class GCBMicroservice:
+class GCBMicroservice(BaseModel):
     project_id: str
     name: str
     terraform_bucket: str
     terraform_prefix: str
     domain: Optional[str] = None
-    env: Optional[Dict[str, str]] = field(default_factory=dict)
-    env_prod: Optional[Dict[str, str]] = field(default_factory=dict)
-    secrets: Optional[Dict[str, str]] = field(default_factory=dict)
+    env: Optional[Dict[str, str]] = {}
+    env_prod: Optional[Dict[str, str]] = {}
+    secrets: Optional[Dict[str, str]] = {}
     service_account: Optional[str] = None
-    schedules: List[GCBSchedule] = field(default_factory=list)
-    workflows: List[GCBWorkflow] = field(default_factory=list)
-    project_roles: List[str] = field(default_factory=list)
+    schedules: List[GCBSchedule] = []
+    workflows: List[GCBWorkflow] = []
+    project_roles: List[str] = []
     public: bool = True
     region: str = "europe-west1"
     registry_region: str = "europe"
@@ -468,6 +470,7 @@ class GCBMicroservice:
         self.build()
 
     def main(self):
+        print(sys.argv)
         cmd = sys.argv[1]
         if cmd == "build":
             self.build()
