@@ -1,12 +1,12 @@
 import json
+import re
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
-from fileinput import filename
+from functools import cached_property
+from pathlib import Path
 from typing import Dict, List, Optional
 
-from dataclasses_jsonschema import JsonSchemaMixin
 from pydantic import BaseModel
 
 from .cloudbuild import cloudbuild_generate
@@ -16,7 +16,6 @@ from .terraform import (
     TFExpression,
     TFProjectRole,
     TFSecretRole,
-    dict_to_terraform,
 )
 from .types import GCBSchedule, GCBWorkflow
 
@@ -44,6 +43,7 @@ class GCBMicroservice(BaseModel):
     github_repo: Optional[str] = None
     # builds may be restricted to europe-west1 https://cloud.google.com/build/docs/locations
     cloudbuild_region: str = "europe-west1"
+    server_root: str = "."
     """
     resource "google_cloudbuildv2_repository" "my-repository" {
     location = "us-central1"
@@ -53,14 +53,33 @@ class GCBMicroservice(BaseModel):
     }
     """
 
-    def __post_init__(self):
-        self.registry = f"{self.registry_region}-docker.pkg.dev"
-        self.image_name = self.name
-        self.image_url = (
-            f"{self.registry}/{self.project_id}/{self.image_name}/{self.image_name}"
-        )
-        self.sa_cloudbuild = self.name + "-cloudbuild"
-        self.sa_scheduler = self.name + "-scheduler"
+    @cached_property
+    def registry(self):
+        return f"{self.registry_region}-docker.pkg.dev"
+
+    @cached_property
+    def image_name(self):
+        return self.name
+
+    @cached_property
+    def image_url(self):
+        return f"{self.registry}/{self.project_id}/{self.image_name}/{self.image_name}"
+
+    @cached_property
+    def image_url_latest(self):
+        return f"{self.image_url}:latest"
+
+    @cached_property
+    def localarch_image_url(self):
+        return f"{self.image_name}_localarch"
+
+    @cached_property
+    def sa_cloudbuild(self):
+        return self.name + "-cloudbuild"
+
+    @cached_property
+    def sa_scheduler(self):
+        return self.name + "-scheduler"
 
     def init(self):
         self.generate()
@@ -397,41 +416,62 @@ class GCBMicroservice(BaseModel):
         return schedules
 
     def getenv(self):
-        with open("./.env.local", "w") as f:
+        with open(f"{self.server_root}/.env.local", "w") as f, open(
+            "./.env.local.docker", "w"
+        ) as fd:
             for k, v in self.env.items():
                 f.write(f"{k}={v}\n")
+                fd.write(f"{k}={v}\n")
             for k, v in self.secrets.items():
                 cmd = f"gcloud secrets versions access latest --secret={v} --project={self.project_id}"
                 value = subprocess.check_output(cmd.split()).decode().strip()
                 f.write(f"{k}={value}\n")
-            f.write(
-                f"GOOGLE_APPLICATION_CREDENTIALS=./terraform/{self.name}-key.json\n"
-            )
+                fd.write(f"{k}={value}\n")
+            creds_path = f"./terraform/{self.name}-key.json"
+            rel_path = Path(creds_path).relative_to(Path(self.server_root))
+            f.write(f"GOOGLE_APPLICATION_CREDENTIALS={rel_path}\n")
+            fd.write(f"GOOGLE_APPLICATION_CREDENTIALS=/app/{self.name}-key.json\n")
 
     def build(self, tag: Optional[str] = None):
         tag = tag or f"local{time.time().__floor__()}"
         image_url_tag = f"{self.image_url}:{tag}"
-        image_url_latest_tag = f"{self.image_url}:latest"
         subprocess.run(
             [
                 "docker",
                 "buildx",
                 "build",
+                "--progress",
+                "plain",
                 "--platform",
                 "linux/amd64",
                 "-t",
                 image_url_tag,
                 "-t",
-                image_url_latest_tag,
+                self.image_url_latest,
                 ".",
             ],
             check=True,
         )
+        return tag
+
+    def buildlocalarch(self):
+        subprocess.run(
+            [
+                "docker",
+                "build",
+                "--progress",
+                "plain",
+                "-t",
+                self.localarch_image_url,
+                ".",
+            ],
+            check=True,
+        )
+        return self.localarch_image_url
 
     def push(self, tag: Optional[str] = None):
-        tag = tag or f"local{time.time().__floor__()}"
+        tag = self.build()
         image_url_tag = f"{self.image_url}:{tag}"
-        image_url_latest_tag = f"{self.image_url}:latest"
         subprocess.run(
             [
                 "docker",
@@ -444,13 +484,14 @@ class GCBMicroservice(BaseModel):
             [
                 "docker",
                 "push",
-                image_url_latest_tag,
+                self.image_url_latest,
             ],
             check=True,
         )
+        return tag
 
     def deploy(self):
-        tag = f"local{time.time().__floor__()}"
+        tag = self.push()
         image_url_tag = f"{self.image_url}:{tag}"
         subprocess.run(
             [
@@ -466,14 +507,34 @@ class GCBMicroservice(BaseModel):
             check=True,
         )
 
-        print(f"Building {image_url_tag}")
-        self.build()
+        print(f"Deploying {image_url_tag}")
+
+    def localrun(self):
+        tag = self.buildlocalarch()
+
+        subprocess.run(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "-p",
+                "8080:8080",
+                "--env-file",
+                "./.env.local.docker",
+                "-v",
+                f"./terraform/{self.name}-key.json:/app/{self.name}-key.json",
+                "backoffice_localarch",
+            ],
+            check=True,
+        )
 
     def main(self):
         print(sys.argv)
         cmd = sys.argv[1]
         if cmd == "build":
             self.build()
+        if cmd == "buildlocalarch":
+            self.buildlocalarch()
         if cmd == "push":
             self.push()
         if cmd == "deploy":
@@ -484,3 +545,5 @@ class GCBMicroservice(BaseModel):
             self.getenv()
         elif cmd == "init":
             self.init()
+        elif cmd == "localrun":
+            self.localrun()

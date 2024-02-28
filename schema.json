@@ -225,6 +225,11 @@
       "default": "europe-west1",
       "title": "Cloudbuild Region",
       "type": "string"
+    },
+    "server_root": {
+      "default": ".",
+      "title": "Server Root",
+      "type": "string"
     }
   },
   "required": [
