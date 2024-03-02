@@ -428,7 +428,7 @@ class GCBMicroservice(BaseModel):
                 f.write(f"{k}={value}\n")
                 fd.write(f"{k}={value}\n")
             creds_path = f"./terraform/{self.name}-key.json"
-            rel_path = Path(creds_path).relative_to(Path(self.server_root))
+            rel_path = Path(creds_path).relative_to(self.server_root, walk_up=True)
             f.write(f"GOOGLE_APPLICATION_CREDENTIALS={rel_path}\n")
             fd.write(f"GOOGLE_APPLICATION_CREDENTIALS=/app/{self.name}-key.json\n")
 
