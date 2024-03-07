@@ -23,7 +23,6 @@ export async function _cli() {
       type: "commonjs",
     },
   });
-  // console.log(compiled.code);
   const config = eval(compiled.code).default as GCBMicroserviceProps;
   const service = new GCBMicroservice(config);
   await cli(service);
