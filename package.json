@@ -20,7 +20,8 @@
         "dev": "pnpm run clean && nodemon --exec 'pnpm run build' --watch src --ext ts",
         "clean": "npx rimraf dist",
         "typecheck": "tsc --noEmit",
-        "build": "swc src -d dist --config-file .swcrc --strip-leading-paths"
+        "build": "swc src -d dist --config-file .swcrc --strip-leading-paths",
+        "postinstall": "pnpm run build"
     },
     "dependencies": {
         "@google-cloud/firestore": "^7.3.0",
