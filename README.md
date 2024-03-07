@@ -7,3 +7,37 @@ then run pnpm run devops ... to execute the devops tasks:
 - generate terraform files
 - generate cloudbuild.yaml
 ...
+
+Example of kdevops.ts file:
+
+```ts
+import { GCBMicroservice } from "@mcanaleta/kdevops";
+
+const service = new GCBMicroservice({
+  name: "backoffice",
+
+...
+});
+
+service.cli();
+```
+
+add swc-node to the project:
+
+```
+pnpm add -D @swc-node/register
+```
+
+In package.json set:
+
+```
+"scripts": {
+  "devops": "node -r @swc-node/register kdevops.ts"
+}
+```
+
+Then run:
+
+```
+pnpm run devops
+```

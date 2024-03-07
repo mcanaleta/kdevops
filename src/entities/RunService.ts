@@ -10,6 +10,7 @@ import {
 import { GCBSchedule } from "./Schedule";
 import { GCBWorkflow } from "./Workflow";
 import { run } from "../lib/cmds";
+import { cli } from "..";
 export type GCBMicroserviceProps = {
   project_id: string;
   name: string;
@@ -481,5 +482,9 @@ export class GCBMicroservice {
     } else if (cmd === "localrun") {
       this.localrun();
     }
+  }
+
+  cli() {
+    return cli(this);
   }
 }

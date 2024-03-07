@@ -8,7 +8,7 @@ export * from "./entities/RunService";
 export * from "./entities/Schedule";
 export * from "./entities/Workflow";
 
-export async function cli() {
+export async function _cli() {
   const currentPath = process.env.PROJECT_DIR ?? process.cwd();
   const configFilePath = `${currentPath}/kdevops.ts`;
   console.log(`Running with config file: ${configFilePath}`);
@@ -26,7 +26,10 @@ export async function cli() {
   // console.log(compiled.code);
   const config = eval(compiled.code).default as GCBMicroserviceProps;
   const service = new GCBMicroservice(config);
+  await cli(service);
+}
 
+export async function cli(service: GCBMicroservice) {
   yargs(hideBin(process.argv))
     .command(
       "build",
@@ -96,5 +99,3 @@ export async function cli() {
     .demandCommand(1)
     .parse();
 }
-
-cli();
