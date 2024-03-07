@@ -1,42 +1,39 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { GCBMicroservice } from "./entities/RunService";
+import { GCBMicroservice, GCBMicroserviceProps } from "./entities/RunService";
+import { transform } from "@swc/core";
+import { readFileSync } from "fs";
 
 export * from "./entities/RunService";
 export * from "./entities/Schedule";
 export * from "./entities/Workflow";
 
-/*
-        cmd = sys.argv[1]
-        if cmd == "build":
-            self.build()
-        if cmd == "buildlocalarch":
-            self.buildlocalarch()
-        if cmd == "push":
-            self.push()
-        if cmd == "deploy":
-            self.deploy()
-        if cmd == "infra":
-            self.apply()
-        elif cmd == "getenv":
-            self.getenv()
-        elif cmd == "init":
-            self.init()
-        elif cmd == "localrun":
-            self.localrun()
-
-            */
-export function cli() {
-  const currentPath = process.cwd();
+export async function cli() {
+  const currentPath = process.env.PROJECT_DIR ?? process.cwd();
   const configFilePath = `${currentPath}/kdevops.ts`;
-  const config = require(configFilePath).default as GCBMicroservice;
+  console.log(`Running with config file: ${configFilePath}`);
+  const contents = readFileSync(configFilePath, "utf-8");
+  const compiled = await transform(contents, {
+    jsc: {
+      parser: {
+        syntax: "typescript",
+      },
+    },
+    module: {
+      type: "commonjs",
+    },
+  });
+  // console.log(compiled.code);
+  const config = eval(compiled.code).default as GCBMicroserviceProps;
+  const service = new GCBMicroservice(config);
+
   yargs(hideBin(process.argv))
     .command(
       "build",
       "build",
       () => {},
       async () => {
-        await config.build();
+        await service.build();
       }
     )
     .command(
@@ -44,7 +41,7 @@ export function cli() {
       "build local architecture",
       () => {},
       () => {
-        config.buildlocalarch();
+        service.buildlocalarch();
       }
     )
     .command(
@@ -52,7 +49,7 @@ export function cli() {
       "push",
       () => {},
       () => {
-        config.push();
+        service.push();
       }
     )
     .command(
@@ -60,7 +57,7 @@ export function cli() {
       "deploy",
       () => {},
       () => {
-        config.deploy();
+        service.deploy();
       }
     )
     .command(
@@ -68,7 +65,7 @@ export function cli() {
       "apply infrastructure",
       () => {},
       () => {
-        config.apply();
+        service.apply();
       }
     )
     .command(
@@ -76,7 +73,7 @@ export function cli() {
       "get environment variables",
       () => {},
       () => {
-        config.getenv();
+        service.getenv();
       }
     )
     .command(
@@ -84,7 +81,7 @@ export function cli() {
       "initialize",
       () => {},
       () => {
-        config.init();
+        service.init();
       }
     )
     .command(
@@ -92,10 +89,12 @@ export function cli() {
       "run locally",
       () => {},
       () => {
-        config.localrun();
+        service.localrun();
       }
     )
     .strictCommands()
     .demandCommand(1)
     .parse();
 }
+
+cli();

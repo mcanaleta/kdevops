@@ -76,6 +76,7 @@ export class GCBMicroservice {
   }
 
   apply(): void {
+    console.log("Generating infra");
     this.generate();
     // run terraform apply in folder ./terraform/
   }
