@@ -9,8 +9,11 @@ import {
 } from "../lib/terraform";
 import { GCBSchedule } from "./Schedule";
 import { GCBWorkflow } from "./Workflow";
-import { run } from "../lib/cmds";
+import { run, runReturn } from "../lib/cmds";
 import { cli } from "..";
+import { writeFileSync } from "fs";
+import { join, relative } from "path";
+
 export type GCBMicroserviceProps = {
   project_id: string;
   name: string;
@@ -37,37 +40,67 @@ export type GCBMicroserviceProps = {
 };
 
 export class GCBMicroservice {
-  constructor(public props: GCBMicroserviceProps) {}
+  public project_id: string;
+  public name: string;
+  public terraform_bucket: string;
+  public terraform_prefix: string;
+  public domain?: string;
+  public env: Record<string, string>;
+  public env_prod: Record<string, string>;
+  public secrets: Record<string, string>;
+  public service_account?: string;
+  public schedules: GCBSchedule[];
+  public workflows: GCBWorkflow[];
+  public project_roles: string[];
+  public isPublic: boolean;
+  public region: string;
+  public registry_region: string;
+  public scheduler_region: string;
+  public cpu: string;
+  public memory: string;
+  public github_user: string;
+  public github_repo: string;
+  public cloudbuild_region: string;
+  public registry: string;
+  public server_root: string;
+  public image_name: string;
+  public image_url: string;
+  public image_url_latest: string;
+  public localarch_image_url: string;
+  public sa_cloudbuild: string;
+  public sa_scheduler: string;
 
-  public project_id = this.props.project_id;
-  public name = this.props.name;
-  public terraform_bucket = this.props.terraform_bucket;
-  public terraform_prefix = this.props.terraform_prefix;
-  public domain = this.props.domain;
-  public env = this.props.env ?? {};
-  public env_prod = this.props.env_prod ?? {};
-  public secrets = this.props.secrets ?? {};
-  public service_account = this.props.service_account;
-  public schedules = this.props.schedules ?? [];
-  public workflows = this.props.workflows ?? [];
-  public project_roles = this.props.project_roles ?? [];
-  public isPublic = this.props.isPublic ?? true;
-  public region = this.props.region ?? "europe-west1";
-  public registry_region = this.props.registry_region ?? "europe";
-  public scheduler_region = this.props.scheduler_region ?? "europe-west1";
-  public cpu = this.props.cpu ?? "1000m";
-  public memory = this.props.memory ?? "1G";
-  public github_user = this.props.github_user;
-  public github_repo = this.props.github_repo;
-  public cloudbuild_region = this.props.cloudbuild_region ?? "europe-west1";
-  public registry = `${this.registry_region}-docker.pkg.dev`;
-  public server_root = this.props.server_root ?? ".";
-  public image_name = this.name;
-  public image_url = `${this.registry}/${this.project_id}/${this.image_name}/${this.image_name}`;
-  public image_url_latest = `${this.image_url}:latest`;
-  public localarch_image_url = `${this.image_name}_localarch`;
-  public sa_cloudbuild = `${this.name}-cloudbuild`;
-  public sa_scheduler = `${this.name}-scheduler`;
+  constructor(props: GCBMicroserviceProps) {
+    this.project_id = props.project_id;
+    this.name = props.name;
+    this.terraform_bucket = props.terraform_bucket;
+    this.terraform_prefix = props.terraform_prefix;
+    this.domain = props.domain;
+    this.env = props.env ?? {};
+    this.env_prod = props.env_prod ?? {};
+    this.secrets = props.secrets ?? {};
+    this.service_account = props.service_account;
+    this.schedules = props.schedules ?? [];
+    this.workflows = props.workflows ?? [];
+    this.project_roles = props.project_roles ?? [];
+    this.isPublic = props.isPublic ?? true;
+    this.region = props.region ?? "europe-west1";
+    this.registry_region = props.registry_region ?? "europe";
+    this.scheduler_region = props.scheduler_region ?? "europe-west1";
+    this.cpu = props.cpu ?? "1000m";
+    this.memory = props.memory ?? "1G";
+    this.github_user = props.github_user;
+    this.github_repo = props.github_repo;
+    this.cloudbuild_region = props.cloudbuild_region ?? "europe-west1";
+    this.registry = `${this.registry_region}-docker.pkg.dev`;
+    this.server_root = props.server_root ?? ".";
+    this.image_name = this.name;
+    this.image_url = `${this.registry}/${this.project_id}/${this.image_name}/${this.image_name}`;
+    this.image_url_latest = `${this.image_url}:latest`;
+    this.localarch_image_url = `${this.image_name}_localarch`;
+    this.sa_cloudbuild = `${this.name}-cloudbuild`;
+    this.sa_scheduler = `${this.name}-scheduler`;
+  }
 
   // Rest of the code...
 
@@ -149,6 +182,7 @@ export class GCBMicroservice {
         _name: service,
         project: this.project_id,
         service: `${service}.googleapis.com`,
+        disable_on_destroy: "false",
       });
     }
     return file;
@@ -264,23 +298,25 @@ export class GCBMicroservice {
       };
     }
 
+    const policyName = `${this.name}_run_noauth`;
+
     file.content.push({
       _data: "google_iam_policy",
-      _name: "noauth",
+      _name: policyName,
       binding: { role: "roles/run.invoker", members: ["allUsers"] },
     });
 
     if (this.isPublic) {
       file.content.push({
         _resource: "google_cloud_run_v2_service_iam_policy",
-        _name: "noauth",
+        _name: policyName,
         project: this.project_id,
         location: new TFExpression(
           `google_cloud_run_v2_service.${this.name}.location`
         ),
         name: new TFExpression(`google_cloud_run_v2_service.${this.name}.name`),
         policy_data: new TFExpression(
-          "data.google_iam_policy.noauth.policy_data"
+          `data.google_iam_policy.${policyName}.policy_data`
         ),
       });
     }
@@ -386,8 +422,46 @@ export class GCBMicroservice {
     return schedules;
   }
 
-  getenv(): void {
-    // Implementation for the `getenv` method
+  async getenv() {
+    console.log("getenv");
+    //   with open(f"{self.server_root}/.env.local", "w") as f, open(
+    //     "./.env.local.docker", "w"
+    // ) as fd:
+    //     for k, v in self.env.items():
+    //         f.write(f"{k}={v}\n")
+    //         fd.write(f"{k}={v}\n")
+    //     for k, v in self.secrets.items():
+    //         cmd = f"gcloud secrets versions access latest --secret={v} --project={self.project_id}"
+    //         value = subprocess.check_output(cmd.split()).decode().strip()
+    //         f.write(f"{k}={value}\n")
+    //         fd.write(f"{k}={value}\n")
+    //     creds_path = f"./terraform/{self.name}-key.json"
+    //     rel_path = Path(creds_path).relative_to(self.server_root, walk_up=True)
+    //     f.write(f"GOOGLE_APPLICATION_CREDENTIALS={rel_path}\n")
+    //     fd.write(f"GOOGLE_APPLICATION_CREDENTIALS=/app/{self.name}-key.json\n")
+    const envLocal = [] as string[];
+    const envDocker = [] as string[];
+    for (const [k, v] of Object.entries(this.env)) {
+      envLocal.push(`${k}=${v}`);
+      envDocker.push(`${k}=${v}`);
+    }
+    for (const [k, v] of Object.entries(this.secrets)) {
+      const value = await runReturn(
+        "gcloud",
+        `secrets versions access latest --secret=${v} --project=${this.project_id}`.split(
+          " "
+        )
+      );
+      envLocal.push(`${k}=${value}`);
+      envDocker.push(`${k}=${value}`);
+    }
+    const creds_path = `./terraform/${this.name}-key.json`;
+    const rel_path = relative(this.server_root, creds_path);
+    envLocal.push(`GOOGLE_APPLICATION_CREDENTIALS=${rel_path}`);
+    envDocker.push(`GOOGLE_APPLICATION_CREDENTIALS=/app/${this.name}-key.json`);
+
+    writeFileSync(`${this.server_root}/.env.local`, envLocal.join("\n"));
+    writeFileSync(`.env.local.docker`, envDocker.join("\n"));
   }
 
   async build(tag?: string) {

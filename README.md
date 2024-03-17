@@ -1,5 +1,17 @@
 work in progress
 
+# opinionated
+
+- pnpm
+- luxon
+- lodash
+- typescript
+- swc
+- firebase, firestore
+- google cloud
+- react
+- trpc
+
 devops tools
 
 the idea is to define a kdevops.ts file in the root of the project
@@ -40,4 +52,12 @@ Then run:
 
 ```
 pnpm run devops
+```
+
+
+
+## Add to a project
+
+```
+pnpm add -w -D github:mcanaleta/kdevops
 ```

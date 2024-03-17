@@ -17,18 +17,16 @@
     "module": "dist/index.js",
     "types": "src/index.ts",
     "scripts": {
-        "dev": "pnpm run clean && nodemon --exec 'pnpm run build' --watch src --ext ts",
+        "dev": "tsup --watch",
         "clean": "npx rimraf dist",
         "typecheck": "tsc --noEmit",
-        "build": "swc src -d dist --config-file .swcrc --strip-leading-paths",
+        "build": "tsup",
         "postinstall": "pnpm run build"
     },
     "dependencies": {
         "@google-cloud/firestore": "^7.3.0",
         "@google-cloud/storage": "^7.7.0",
-        "@swc/cli": "^0.3.9",
-        "@swc/core": "^1.4.2",
-        "@swc/jest": "^0.2.36",
+        "esbuild": "^0.20.2",
         "googleapis": "^133.0.0",
         "lodash": "^4.17.21",
         "luxon": "^3.4.4",
@@ -48,6 +46,7 @@
         "pnpm": "^8.15.3",
         "rimraf": "^5.0.5",
         "ts-node": "^10.9.2",
+        "tsup": "^8.0.2",
         "typescript": "^5.2.2"
     }
 }

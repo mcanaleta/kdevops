@@ -1,7 +1,7 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { GCBMicroservice, GCBMicroserviceProps } from "./entities/RunService";
-import { transform } from "@swc/core";
+import * as esbuild from "esbuild";
 import { readFileSync } from "fs";
 
 export * from "./entities/RunService";
@@ -13,17 +13,16 @@ export async function _cli() {
   const configFilePath = `${currentPath}/kdevops.ts`;
   console.log(`Running with config file: ${configFilePath}`);
   const contents = readFileSync(configFilePath, "utf-8");
-  const compiled = await transform(contents, {
-    jsc: {
-      parser: {
-        syntax: "typescript",
-      },
-    },
-    module: {
-      type: "commonjs",
-    },
+  const compiled = await esbuild.transform(contents, {
+    loader: "ts",
+    target: "es2015",
+    format: "cjs",
+    minify: false,
   });
-  const config = eval(compiled.code).default as GCBMicroserviceProps;
+  const module = { exports: { default: {} } };
+  const f = new Function("module", compiled.code);
+  f(module);
+  const config = module.exports.default as GCBMicroserviceProps;
   const service = new GCBMicroservice(config);
   await cli(service);
 }
