@@ -197,6 +197,9 @@ export class GCBMicroservice {
         secret_id: v,
         replication: { auto: {} },
         depends_on: [new TFExpression("google_project_service.secretmanager")],
+        lifecycle: {
+          prevent_destroy: "true",
+        },
       });
     }
 
