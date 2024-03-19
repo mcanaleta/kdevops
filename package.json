@@ -20,8 +20,7 @@
         "dev": "tsup --watch",
         "clean": "npx rimraf dist",
         "typecheck": "tsc --noEmit",
-        "build": "tsup",
-        "postinstall": "pnpm run build"
+        "build": "tsup"
     },
     "dependencies": {
         "@google-cloud/firestore": "^7.3.0",
