@@ -1,8 +1,15 @@
-import { spawn } from "child_process";
+import { SpawnOptionsWithoutStdio, spawn } from "child_process";
 
-export function run(command: string, args: string[]): Promise<void> {
+/**
+ * Run a command inheriting stdin, stdout, and stderr.
+ */
+export function run(
+  command: string,
+  args: string[],
+  options?: SpawnOptionsWithoutStdio
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args);
+    const child = spawn(command, args, options);
     process.stdin.pipe(child.stdin);
 
     child.stdout.on("data", (data) => {

@@ -37,6 +37,7 @@ export type GCBMicroserviceProps = {
   github_repo: string;
   cloudbuild_region?: string;
   server_root?: string;
+  create_secrets?: boolean;
 };
 
 export class GCBMicroservice {
@@ -69,6 +70,7 @@ export class GCBMicroservice {
   public localarch_image_url: string;
   public sa_cloudbuild: string;
   public sa_scheduler: string;
+  public create_secrets: boolean;
 
   constructor(props: GCBMicroserviceProps) {
     this.project_id = props.project_id;
@@ -100,6 +102,7 @@ export class GCBMicroservice {
     this.localarch_image_url = `${this.image_name}_localarch`;
     this.sa_cloudbuild = `${this.name}-cloudbuild`;
     this.sa_scheduler = `${this.name}-scheduler`;
+    this.create_secrets = props.create_secrets ?? true;
   }
 
   // Rest of the code...
@@ -112,6 +115,7 @@ export class GCBMicroservice {
   apply(): void {
     console.log("Generating infra");
     this.generate();
+    run("terraform", ["apply"], { cwd: "./terraform" });
     // run terraform apply in folder ./terraform/
   }
 
@@ -191,16 +195,20 @@ export class GCBMicroservice {
   generate_secrets(): TerraformFile {
     const secrets = new TerraformFile("secrets");
     for (const [k, v] of Object.entries(this.secrets)) {
-      secrets.content.push({
-        _resource: "google_secret_manager_secret",
-        _name: v,
-        secret_id: v,
-        replication: { auto: {} },
-        depends_on: [new TFExpression("google_project_service.secretmanager")],
-        lifecycle: {
-          prevent_destroy: "true",
-        },
-      });
+      if (this.create_secrets === "local") {
+        secrets.content.push({
+          _resource: "google_secret_manager_secret",
+          _name: v,
+          secret_id: v,
+          replication: { auto: {} },
+          depends_on: [
+            new TFExpression("google_project_service.secretmanager"),
+          ],
+          lifecycle: {
+            prevent_destroy: "true",
+          },
+        });
+      }
     }
 
     return secrets;
@@ -283,9 +291,7 @@ export class GCBMicroservice {
         name: k,
         value_source: {
           secret_key_ref: {
-            secret: new TFExpression(
-              `google_secret_manager_secret.${v}.secret_id`
-            ),
+            secret: v,
             version: "latest",
           },
         },
@@ -532,7 +538,7 @@ export class GCBMicroservice {
       "./.env.local.docker",
       "-v",
       `./terraform/${this.name}-key.json:/app/${this.name}-key.json`,
-      "backoffice_localarch",
+      this.localarch_image_url,
     ]);
   }
 

@@ -114,9 +114,7 @@ export class TFSecretRole extends TFRole {
     return {
       _resource: "google_secret_manager_secret_iam_member",
       _name: this.role.split(".").pop() + "-" + this.secretName,
-      secret_id: new TFExpression(
-        `google_secret_manager_secret.${this.secretName}.secret_id`
-      ),
+      secret_id: this.secretName,
       role: "roles/" + this.role,
     };
   }
