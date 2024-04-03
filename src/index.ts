@@ -3,6 +3,7 @@ import { hideBin } from "yargs/helpers";
 import { GCBMicroservice, GCBMicroserviceProps } from "./entities/RunService";
 import * as esbuild from "esbuild";
 import { readFileSync } from "fs";
+import { getEnv } from "./commands/getenv";
 
 export * from "./entities/RunService";
 export * from "./entities/Schedule";
@@ -71,10 +72,10 @@ export async function cli(service: GCBMicroservice) {
     )
     .command(
       "getenv",
-      "get environment variables",
+      "get environment variables and service account key file",
       () => {},
       () => {
-        service.getenv();
+        getEnv(service);
       }
     )
     .command(

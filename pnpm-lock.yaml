@@ -8,6 +8,12 @@ dependencies:
   '@google-cloud/firestore':
     specifier: ^7.3.0
     version: 7.3.1
+  '@google-cloud/iam':
+    specifier: ^1.2.0
+    version: 1.2.0
+  '@google-cloud/secret-manager':
+    specifier: ^5.3.0
+    version: 5.3.0
   '@google-cloud/storage':
     specifier: ^7.7.0
     version: 7.7.0
@@ -552,6 +558,16 @@ packages:
       - supports-color
     dev: false
 
+  /@google-cloud/iam@1.2.0:
+    resolution: {integrity: sha512-hg6loveLGRfme1AJ9ChZoRGQ172Jx9qaOfYggFHx82/rdJu94zNitB6ojpxqWGlJCs5dPkq8QeRGoCoTiRqRHQ==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      google-gax: 4.3.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+    dev: false
+
   /@google-cloud/paginator@5.0.0:
     resolution: {integrity: sha512-87aeg6QQcEPxGCOthnpUjvw4xAZ57G7pL8FS0C4e/81fr3FjkpUpibf1s2v5XGyGhUVGF4Jfg7yEcxqn2iUw1w==}
     engines: {node: '>=14.0.0'}
@@ -568,6 +584,16 @@ packages:
   /@google-cloud/promisify@4.0.0:
     resolution: {integrity: sha512-Orxzlfb9c67A15cq2JQEyVc7wEsmFBmHjZWZYQMUyJ1qivXyMwdyNOs9odi79hze+2zqdTtu1E19IM/FtqZ10g==}
     engines: {node: '>=14'}
+    dev: false
+
+  /@google-cloud/secret-manager@5.3.0:
+    resolution: {integrity: sha512-ps/1Q3igDTehJoQdvx/H+3VzDE/v9jnteGWmGfj7lW3maSaF8hKKszEyp8FnSDvUIgBj+0126x5EKcFgFskWpQ==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      google-gax: 4.3.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
     dev: false
 
   /@google-cloud/storage@7.7.0:

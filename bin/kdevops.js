@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-console.log('hiii');
 const ind = require('../dist/index.js');
 
 ind._cli();

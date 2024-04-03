@@ -362,23 +362,6 @@ export class GCBMicroservice {
       ...Object.values(this.secrets).map((s) => new TFSecretRole(s)),
     ]);
 
-    iam.content.push({
-      _resource: "google_service_account_key",
-      _name: this.name,
-      service_account_id: new TFExpression(
-        `google_service_account.${this.name}.id`
-      ),
-    });
-
-    iam.content.push({
-      _resource: "local_file",
-      _name: `${this.name}_key`,
-      filename: `${this.name}-key.json`,
-      content: new TFExpression(
-        `base64decode(google_service_account_key.${this.name}.private_key)`
-      ),
-    });
-
     iam.addServiceAccount(this.sa_cloudbuild, [
       new TFProjectRole("run.developer", this.project_id),
       new TFProjectRole("cloudbuild.builds.editor", this.project_id),
@@ -430,49 +413,6 @@ export class GCBMicroservice {
     }
     return schedules;
   }
-
-  async getenv() {
-    console.log("getenv");
-    //   with open(f"{self.server_root}/.env.local", "w") as f, open(
-    //     "./.env.local.docker", "w"
-    // ) as fd:
-    //     for k, v in self.env.items():
-    //         f.write(f"{k}={v}\n")
-    //         fd.write(f"{k}={v}\n")
-    //     for k, v in self.secrets.items():
-    //         cmd = f"gcloud secrets versions access latest --secret={v} --project={self.project_id}"
-    //         value = subprocess.check_output(cmd.split()).decode().strip()
-    //         f.write(f"{k}={value}\n")
-    //         fd.write(f"{k}={value}\n")
-    //     creds_path = f"./terraform/{self.name}-key.json"
-    //     rel_path = Path(creds_path).relative_to(self.server_root, walk_up=True)
-    //     f.write(f"GOOGLE_APPLICATION_CREDENTIALS={rel_path}\n")
-    //     fd.write(f"GOOGLE_APPLICATION_CREDENTIALS=/app/{self.name}-key.json\n")
-    const envLocal = [] as string[];
-    const envDocker = [] as string[];
-    for (const [k, v] of Object.entries(this.env)) {
-      envLocal.push(`${k}=${v}`);
-      envDocker.push(`${k}=${v}`);
-    }
-    for (const [k, v] of Object.entries(this.secrets)) {
-      const value = await runReturn(
-        "gcloud",
-        `secrets versions access latest --secret=${v} --project=${this.project_id}`.split(
-          " "
-        )
-      );
-      envLocal.push(`${k}=${value}`);
-      envDocker.push(`${k}=${value}`);
-    }
-    const creds_path = `./terraform/${this.name}-key.json`;
-    const rel_path = relative(this.server_root, creds_path);
-    envLocal.push(`GOOGLE_APPLICATION_CREDENTIALS=${rel_path}`);
-    envDocker.push(`GOOGLE_APPLICATION_CREDENTIALS=/app/${this.name}-key.json`);
-
-    writeFileSync(`${this.server_root}/.env.local`, envLocal.join("\n"));
-    writeFileSync(`.env.local.docker`, envDocker.join("\n"));
-  }
-
   async build(tag?: string) {
     tag = tag ?? `local${Math.floor(Date.now() / 1000)}`;
     const image_url_tag = `${this.image_url}:${tag}`;
