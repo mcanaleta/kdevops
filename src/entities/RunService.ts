@@ -21,6 +21,7 @@ export type GCBMicroserviceProps = {
   terraform_prefix: string;
   domain?: string;
   env?: Record<string, string>;
+  env_local?: Record<string, string>;
   env_prod?: Record<string, string>;
   secrets?: Record<string, string>;
   service_account?: string;
@@ -47,6 +48,7 @@ export class GCBMicroservice {
   public terraform_prefix: string;
   public domain?: string;
   public env: Record<string, string>;
+  public env_local: Record<string, string>;
   public env_prod: Record<string, string>;
   public secrets: Record<string, string>;
   public service_account?: string;
@@ -79,6 +81,7 @@ export class GCBMicroservice {
     this.terraform_prefix = props.terraform_prefix;
     this.domain = props.domain;
     this.env = props.env ?? {};
+    this.env_local = props.env_local ?? {};
     this.env_prod = props.env_prod ?? {};
     this.secrets = props.secrets ?? {};
     this.service_account = props.service_account;

@@ -38,7 +38,8 @@ export async function getEnv(service: GCBMicroservice) {
   await createKey(service);
   const envLocal = [] as string[];
   const envDocker = [] as string[];
-  for (const [k, v] of Object.entries(service.env)) {
+  const mergedEnv = { ...service.env, ...service.env_local };
+  for (const [k, v] of Object.entries(mergedEnv)) {
     envLocal.push(`${k}=${v}`);
     envDocker.push(`${k}=${v}`);
   }
