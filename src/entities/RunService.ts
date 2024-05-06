@@ -198,7 +198,7 @@ export class GCBMicroservice {
   generate_secrets(): TerraformFile {
     const secrets = new TerraformFile("secrets");
     for (const [k, v] of Object.entries(this.secrets)) {
-      if (this.create_secrets === "local") {
+      if (this.create_secrets) {
         secrets.content.push({
           _resource: "google_secret_manager_secret",
           _name: v,
@@ -480,7 +480,7 @@ export class GCBMicroservice {
       "--env-file",
       "./.env.local.docker",
       "-v",
-      `./terraform/${this.name}-key.json:/app/${this.name}-key.json`,
+      `./keys/${this.name}-key.json:/app/${this.name}-key.json`,
       this.localarch_image_url,
     ]);
   }

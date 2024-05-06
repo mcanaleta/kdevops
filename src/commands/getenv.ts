@@ -38,9 +38,13 @@ export async function getEnv(service: GCBMicroservice) {
   await createKey(service);
   const envLocal = [] as string[];
   const envDocker = [] as string[];
-  const mergedEnv = { ...service.env, ...service.env_local };
-  for (const [k, v] of Object.entries(mergedEnv)) {
+  for (const [k, v] of Object.entries({
+    ...service.env,
+    ...service.env_local,
+  })) {
     envLocal.push(`${k}=${v}`);
+  }
+  for (const [k, v] of Object.entries(service.env)) {
     envDocker.push(`${k}=${v}`);
   }
   const sm = new SecretManagerServiceClient({
