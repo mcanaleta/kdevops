@@ -12,7 +12,7 @@ pnpm run build
 # fi
 
 npm version patch
-git add .
-git commit -m "Bump version"
+# git add .
+# git commit -m "Bump version"
 git push
 pnpm publish --access public --no-git-checks
