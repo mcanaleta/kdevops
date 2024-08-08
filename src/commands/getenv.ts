@@ -70,6 +70,7 @@ export async function getEnv(service: GCBMicroservice) {
     `GOOGLE_APPLICATION_CREDENTIALS=/app/${service.name}-key.json`
   );
 
-  writeFileSync(`${service.server_root}/.env.local`, envLocal.join("\n"));
+  console.log(`Writing .env.local and .env.local.docker`);
+  writeFileSync(`.env.local`, envLocal.join("\n"));
   writeFileSync(`.env.local.docker`, envDocker.join("\n"));
 }

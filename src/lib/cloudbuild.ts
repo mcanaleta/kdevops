@@ -59,7 +59,7 @@ export function cloudbuild_generate(service: GCBMicroservice): void {
       },
     ],
     images: [image_url_tag, image_url_tag_latest],
-    options: { logging: "CLOUD_LOGGING_ONLY" },
+    options: { logging: "CLOUD_LOGGING_ONLY", machineType: "E2_HIGHCPU_8" },
     projectId: service.project_id,
   };
 

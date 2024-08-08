@@ -30,14 +30,7 @@ work in progress
 # opinionated
 
 - pnpm
-- luxon
-- lodash
-- typescript
-- swc
-- firebase, firestore
 - google cloud
-- react
-- trpc
 
 devops tools
 
@@ -62,25 +55,7 @@ const service = new GCBMicroservice({
 service.cli();
 ```
 
-add swc-node to the project:
-
-```
-pnpm add -D @swc-node/register
-```
-
-In package.json set:
-
-```
-"scripts": {
-  "devops": "node -r @swc-node/register kdevops.ts"
-}
-```
-
-Then run:
-
-```
-pnpm run devops
-```
+w
 
 ## Add to a project
 
