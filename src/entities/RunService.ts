@@ -11,8 +11,9 @@ import { GCBSchedule } from "./Schedule";
 import { GCBWorkflow } from "./Workflow";
 import { run, runReturn } from "../lib/cmds";
 import { cli } from "..";
-import { writeFileSync } from "fs";
-import { join, relative } from "path";
+import { existsSync, writeFileSync } from "fs";
+import { join, relative, resolve } from "path";
+import { getEnv } from "../commands/getenv";
 
 export type GCBMicroserviceProps = {
   project_id: string;
@@ -472,15 +473,19 @@ export class GCBMicroservice {
 
   async localrun() {
     const tag = await this.buildlocalarch();
+    const args = [];
+    const localKeyPath = resolve(`./keys/${this.name}-key.json`);
+    console.log("localKeyPath", localKeyPath);
     await run("docker", [
       "run",
       "--rm",
       "-p",
       "8080:8080",
-      "--env-file",
-      "./.env.local.docker",
-      "-v",
-      `./keys/${this.name}-key.json:/app/${this.name}-key.json`,
+      ...(existsSync("./.env.local.docker")
+        ? ["--env-file", "./.env.local.docker"]
+        : []),
+      "--mount",
+      `type=bind,source=${localKeyPath},target=/app/${this.name}-key.json`,
       this.localarch_image_url,
     ]);
   }
@@ -502,7 +507,7 @@ export class GCBMicroservice {
     if (cmd === "infra") {
       this.apply();
     } else if (cmd === "getenv") {
-      this.getenv();
+      getEnv(this);
     } else if (cmd === "init") {
       this.init();
     } else if (cmd === "localrun") {

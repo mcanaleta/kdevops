@@ -19,7 +19,7 @@
     "scripts": {
         "dev": "tsup --watch",
         "clean": "npx rimraf dist",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc src/index.ts --noEmit",
         "build": "tsup"
     },
     "dependencies": {
