@@ -13,12 +13,18 @@ class KubernetesContext:
     namespace: str
 
     def ensure_namespace(self, namespace: str):
-        if namespace not in cmd_output("kubectl get namespaces"):
-            cmd_output(f"kubectl create namespace {namespace}")
+        ns_yaml = yaml.dump({
+            "apiVersion": "v1",
+            "kind": "Namespace",
+            "metadata": {
+                "name": namespace
+            }
+        })
+        self.kubectl_apply_raw(ns_yaml)
 
     def kubectl(self, args: str):
-        cmd(f"kubectl {
-            args} --context {self.context} --namespace {self.namespace}")
+        cmd(f"kubectl --context {self.context} --namespace {self.namespace} {
+            args}")
 
     def kubectl_apply_raw(self, content: str):
         with tempfile.NamedTemporaryFile("w", delete=True) as f:

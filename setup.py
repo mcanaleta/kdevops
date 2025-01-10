@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "requests",  # Example dependency
         "PyYAML",
-        "jinja2"
+        "jinja2",
+        "typer"
     ],
 )
