@@ -3,7 +3,7 @@ import subprocess
 
 def cmd(command):
     # Run a shell command
-    subprocess.run(command, shell=True, check=True)
+    return subprocess.run(command, shell=True, check=True)
 
 
 def cmd_output(command):
@@ -12,7 +12,4 @@ def cmd_output(command):
 
 
 def cmd_nocheck(cmd_str):
-    try:
-        return cmd(cmd_str)
-    except Exception as e:
-        pass
+    return subprocess.run(cmd_str, shell=True, check=False)
