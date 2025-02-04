@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import base64
 import json
+import subprocess
 import tempfile
 import yaml
 
@@ -21,6 +22,9 @@ class KubernetesContext:
             }
         })
         self.kubectl_apply_raw(ns_yaml)
+
+    def kubectl_cmd(self, args: str):
+        return f"kubectl --context {self.context} --namespace {self.namespace} {args}"
 
     def kubectl(self, args: str, check=True):
         cmd = f"kubectl --context {
@@ -46,6 +50,21 @@ class KubernetesContext:
             "data": {key: base64.b64encode(value.encode()).decode() for key, value in data.items()}
         })
         self.kubectl_apply_raw(secret_yaml)
+
+    def get_secret(self, name: str):
+        cmd = self.kubectl_cmd(f"get secret {name} -o json")
+        result = subprocess.run(cmd, shell=True, capture_output=True)
+        if result.returncode == 0:
+            secret_data = json.loads(result.stdout)
+            data = {key: base64.b64decode(value).decode()
+                    for key, value in secret_data["data"].items()}
+            return data
+        else:
+            err = result.stderr.decode()
+            if "Error from server (NotFound)" in err:
+                return None
+            else:
+                raise Exception(err)
 
     def set_secret_from_op(self, vault: str, name: str, kube_name: str):
         op_output = json.loads(cmds.cmd_output(
