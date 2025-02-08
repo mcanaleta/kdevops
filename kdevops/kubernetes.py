@@ -13,12 +13,12 @@ class KubernetesContext:
     context: str
     namespace: str
 
-    def ensure_namespace(self, namespace: str):
+    def ensure_namespace(self, namespace=None):
         ns_yaml = yaml.dump({
             "apiVersion": "v1",
             "kind": "Namespace",
             "metadata": {
-                "name": namespace
+                "name": namespace or self.namespace
             }
         })
         self.kubectl_apply_raw(ns_yaml)
@@ -39,6 +39,9 @@ class KubernetesContext:
             f.write(content)
             f.flush()
             self.kubectl(f"apply -f {f.name}")
+
+    def kustomize(self, path: str):
+        self.kubectl(f"apply -k {path}")
 
     def set_secret(self, name: str, data: dict[str, str]):
         secret_yaml = yaml.dump({

@@ -1,3 +1,4 @@
+import base64
 from dataclasses import dataclass
 from .cmds import cmd, cmd_output
 from pathlib import Path
@@ -9,12 +10,14 @@ import os
 class Docker:
     docker_command: str = "docker"
 
-    def build(self, img: str, path=".", repo=None, platform=None, dockerfile="Dockerfile"):
+    def build(self, img: str, path=".", repo=None, platform=None, dockerfile=None):
         img_full = f"{repo}/{img}" if repo else img
         img_latest = f"{img_full}:latest"
 
         # Build the Docker image
-        args = [f"-t {img_latest} -f {dockerfile}"]
+        args = [f"-t {img_latest}"]
+        if dockerfile:
+            args.append(f"-f {dockerfile}")
         if platform:
             args.append(f"--platform {platform}")
         args = " ".join(args)
@@ -45,3 +48,10 @@ class MinikubeDocker(Docker):
             tmpfile.write("\ndocker $@")
         Path(tmp_file_path).chmod(0o755)
         self.docker_command = tmp_file_path
+
+
+def docker_generate_config(host, username, password):
+    credentials = f"{username}:{password}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+    docker_config = {"auths": {host: {"auth": encoded_credentials}}}
+    return docker_config
