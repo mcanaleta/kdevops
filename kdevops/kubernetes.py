@@ -40,6 +40,9 @@ class KubernetesContext:
             f.flush()
             self.kubectl(f"apply -f {f.name}")
 
+    def kubectl_apply_dict(self, data: dict):
+        self.kubectl_apply_raw(yaml.dump(data))
+
     def kustomize(self, path: str):
         self.kubectl(f"apply -k {path}")
 
