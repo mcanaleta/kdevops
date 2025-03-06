@@ -1,6 +1,6 @@
 import base64
 from dataclasses import dataclass
-from .cmds import cmd, cmd_output
+from kdevops import cmds
 from pathlib import Path
 import tempfile
 import os
@@ -21,20 +21,34 @@ class Docker:
         if platform:
             args.append(f"--platform {platform}")
         args = " ".join(args)
-        cmd(f"{self.docker_command} build {path} {args}")
+        cmds.cmd(f"{self.docker_command} build {path} {args}")
 
         # Get the SHA of the latest image
-        sha = cmd_output(
+        sha = cmds.cmd_output(
             f"{self.docker_command} images --no-trunc --quiet {img_latest}").replace("sha256:", "")
         img_tagged = f"{img_full}:{sha}"
         print(f"Image SHA: {sha}")
 
         # Tag and push the image
-        cmd(f"{self.docker_command} tag {img_latest} {img_tagged}")
+        cmds.cmd(f"{self.docker_command} tag {img_latest} {img_tagged}")
         if repo is not None:
-            cmd(f"{self.docker_command} push {img_tagged}")
+            cmds.cmd(f"{self.docker_command} push {img_tagged}")
 
         return img_tagged
+
+    def run(self, img: str, it=False, cmd: str = None, detach=False, rm=True, **kwargs):
+        args = ["run"]
+        if detach:
+            args.append("-d")
+        if rm:
+            args.append("--rm")
+        if it:
+            args.append("-it")
+        args.append(img)
+        if cmd:
+            args.append(cmd)
+        args = " ".join(args)
+        cmds.cmd(f"{self.docker_command} {args}")
 
 
 @dataclass

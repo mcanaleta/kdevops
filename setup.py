@@ -19,6 +19,7 @@ setup(
         "requests",  # Example dependency
         "PyYAML",
         "jinja2",
-        "typer"
+        "typer",
+        "watchdog"
     ],
 )
